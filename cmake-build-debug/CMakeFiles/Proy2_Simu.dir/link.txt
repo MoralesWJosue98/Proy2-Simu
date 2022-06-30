@@ -1,0 +1,3 @@
+"C:\Program Files\JetBrains\CLion 2022.1.3\bin\cmake\win\bin\cmake.exe" -E rm -f CMakeFiles\Proy2_Simu.dir/objects.a
+C:\PROGRA~1\JETBRA~1\CLION2~1.3\bin\mingw\bin\ar.exe qc CMakeFiles\Proy2_Simu.dir/objects.a @CMakeFiles\Proy2_Simu.dir\objects1.rsp
+C:\PROGRA~1\JETBRA~1\CLION2~1.3\bin\mingw\bin\G__~1.EXE -g -Wl,--whole-archive CMakeFiles\Proy2_Simu.dir/objects.a -Wl,--no-whole-archive -o Proy2_Simu.exe -Wl,--out-implib,libProy2_Simu.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\Proy2_Simu.dir\linklibs.rsp
