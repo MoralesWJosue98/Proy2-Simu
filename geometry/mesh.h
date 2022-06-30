@@ -214,7 +214,7 @@ public:
         <elem> es el elemento a ingresar, mientras que <pos>
         es la posición de interés en el arreglo de elementos.
     */
-    void add_element(Element *elem, int poas) {
+    void add_element(Element *elem, int pos) {
         SDDS<Element *>::insert(elements, pos, elem);
     }
 

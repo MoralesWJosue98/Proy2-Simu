@@ -175,10 +175,11 @@ int main(int argc, char **argv) {
         //Se preparan los arreglos para almacenar todas las matrices locales de todos los elementos
         //La longitud de los 3 arreglos es igual a la cantidad de elementos
         SDDS<DS<float> *>::create(&M_locals, nelems, ARRAY);
+        SDDS<DS<float> *>::create(&K_locals, nelems, ARRAY);
+        SDDS<DS<float> *>::create(&PA_locals, nelems, ARRAY);
         SDDS<DS<float> *>::create(&b_locals, nelems, ARRAY);
         SDDS<DS<float> *>::create(&c_locals, nelems, ARRAY);
-        SDDS<DS<float> *>::create(&PA_locals, nelems, ARRAY);
-        SDDS<DS<float> *>::create(&K_locals, nelems, ARRAY);
+
 
         //Se recorren los elementos
         for (int e = 0; e < nelems; e++) {
@@ -193,15 +194,16 @@ int main(int argc, char **argv) {
             //Se calcula la M local y se añade al listado de matrices M.
             SDDS<DS<float> *>::insert(M_locals, e,
                                       FEM::calculate_local_M(current_elem));
+            //Se calcula la K local y se añade al listado de matrices K.
+            SDDS<DS<float> *>::insert(K_locals, e,
+                                      FEM::calculate_local_K(current_elem));
+            //Se calcula la PA local y se añade al listado de matrices PA. Se envía la autoestima inicial del pokemon
+            SDDS<DS<float> *>::insert(PA_locals, e, FEM::calculate_local_PA(INITIAL_ESTEEM, current_elem));
             //Se calcula la b local y se añade al listado de matrices b.
             SDDS<DS<float> *>::insert(b_locals, e, FEM::calculate_local_b(current_elem));
             //Se calcula la c local y se añade al listado de matrices c.
             SDDS<DS<float> *>::insert(c_locals, e, FEM::calculate_local_c(current_elem));
-            //Se calcula la PA local y se añade al listado de matrices PA.
-            SDDS<DS<float> *>::insert(PA_locals, e, FEM::calculate_local_PA(INITIAL_ESTEEM, current_elem));
-            //Se calcula la K local y se añade al listado de matrices K. Se envía la conductividad térmica del material
-            SDDS<DS<float> *>::insert(K_locals, e,
-                                      FEM::calculate_local_K(current_elem));
+
             cout << "OK\n\n";
         }
 
@@ -212,12 +214,12 @@ int main(int argc, char **argv) {
         Math::zeroes(M);
         SDDS<float>::create(&K, nnodes, nnodes, MATRIX);
         Math::zeroes(K);
+        SDDS<float>::create(&PA, nnodes, nnodes, MATRIX);
+        Math::zeroes(PA);
         SDDS<float>::create(&b, nnodes, 1, MATRIX);
         Math::zeroes(b);
         SDDS<float>::create(&c, nnodes, 1, MATRIX);
         Math::zeroes(c);
-        SDDS<float>::create(&PA, nnodes, nnodes, MATRIX);
-        Math::zeroes(PA);
 
         //Se recorren los listados de matrices locales, un elemento a la vez
         for (int e = 0; e < nelems; e++) {
@@ -233,15 +235,15 @@ int main(int argc, char **argv) {
             //Se extrae la matriz K del elemento actual y se envía a ensamblaje
             SDDS<DS<float> *>::extract(K_locals, e, &temp);
             FEM::assembly(K, temp, current_elem, true);
+            //Se extrae la matriz PA del elemento actual y se envía a ensamblaje
+            SDDS<DS<float> *>::extract(PA_locals, e, &temp);
+            FEM::assembly(PA, temp, current_elem, false); //Se indica que ensamblará una matriz 3 x 1
             //Se extrae la matriz b del elemento actual y se envía a ensamblaje
             SDDS<DS<float> *>::extract(b_locals, e, &temp);
             FEM::assembly(b, temp, current_elem, false); //Se indica que ensamblará una matriz 3 x 1
             //Se extrae la matriz c del elemento actual y se envía a ensamblaje
             SDDS<DS<float> *>::extract(c_locals, e, &temp);
             FEM::assembly(c, temp, current_elem, false); //Se indica que ensamblará una matriz 3 x 1
-            //Se extrae la matriz PA del elemento actual y se envía a ensamblaje
-            SDDS<DS<float> *>::extract(PA_locals, e, &temp);
-            FEM::assembly(PA, temp, current_elem, false); //Se indica que ensamblará una matriz 3 x 1
             cout << "OK\n\n";
         }
 
@@ -253,9 +255,11 @@ int main(int argc, char **argv) {
         cout << "\tApplying Dirichlet conditions... ";
         //Se modifican las matrices globales para aplicar las condiciones de Dirichlet
         FEM::apply_Dirichlet(nnodes, free_nodes, &b, K, Ad, dirichlet_indices);
-        FEM::apply_Dirichlet(nnodes, free_nodes, &PA, dirichlet_indices);
+        FEM::apply_Dirichlet(nnodes, free_nodes, &c, PA, Ad, dirichlet_indices);
+        Math::sum_in_place(b, c);
         FEM::apply_Dirichlet(nnodes, free_nodes, &M, dirichlet_indices);
         FEM::apply_Dirichlet(nnodes, free_nodes, &K, dirichlet_indices);
+        FEM::apply_Dirichlet(nnodes, free_nodes, &PA, dirichlet_indices);
         cout << "OK\n\n";
 
         cout << "\tCalculating self esteem at next time step.\n\tUsing FEM generated formulas and Forward Euler... ";
@@ -263,31 +267,31 @@ int main(int argc, char **argv) {
         /*
             Se procede a ejecutar la ecuación de transferencia de calor en su versión discretizada con Forward Euler:
 
-                        A^(i+1) = A^i + M^(-1) * delta_t * ( b + c - PA + KA )
+                        A^(i+1) = A^i + M^(-1) * delta_t * ( b + c - PA + K*A )
 
             En la expresión anterior, a la matriz b ya se le han incorporado el vector columna de las condiciones
             de Neumann, y el vector columna generado por la aplicación de las condiciones de Dirichlet.
         */
 
         //Se ejecuta K * A, donde A son el valor de la autoestima en el tiempo actual
-        DS<float> *temp = Math::product(K, A);
-        //Se multiplica el contenido del resultado de la matriz PA por -1 para simular la resta
-        Math::product_in_place(PA, -1);
+        DS<float> *temp = Math::product(K, A); // temp = K*A
         //Se suma el resultado de K*A a la matriz PA
-        Math::sum_in_place(PA, temp);
+        Math::sum_in_place(temp, PA); // PA = K*A + PA
+        //Se multiplica el contenido del resultado de la matriz PA por -1 para simular la resta
+        Math::product_in_place(temp, -1); // = -(PA)
         //Se suma el resultado de (-PA + KA) a la matriz c
-        Math::sum_in_place(c, temp);
+        Math::sum_in_place(temp, c); //c = c - PA
         //Se suma el resultado de (-PA + KA) + c a la matriz b
-        Math::sum_in_place(b, temp);
+        Math::sum_in_place(temp, b); // b = b + c
         //Se multiplica el contenido del resultado anterior por delta_t, el paso de tiempo
-        Math::product_in_place(b, dt);
+        Math::product_in_place(temp, dt); // b = b * dt
         //Se multiplica el resultado anterior por la inversa de la matriz M, y el resultado se añade a los
         //resultados del tiempo actual, obteniendo así los resultados del siguiente tiempo
         //SDDS<float>::show(M,false);
         //DS<float>* temp2 = Math::inverse(M);
         DS<float> *temp2 = Math::inverse_Cholesky(M);
         //SDDS<float>::show(temp2,false);
-        DS<float> *temp3 = Math::product(temp2, b);
+        DS<float> *temp3 = Math::product(temp2, temp); // temp3 = M^(-1) * delta_t * ( b + c - PA + K*A )
         Math::sum_in_place(A, temp3);
         //La matriz temp ya no será utilizada, por lo que se libera su espacio en memoria
         SDDS<float>::destroy(temp);

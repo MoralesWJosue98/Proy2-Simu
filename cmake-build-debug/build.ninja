@@ -39,7 +39,7 @@ include CMakeFiles/rules.ninja
 #############################################
 # Logical path to working directory; prefix for absolute paths.
 
-cmake_ninja_workdir = C$:/Users/wilfr/Documents/Proy2-Simu/cmake-build-debug/
+cmake_ninja_workdir = C$:/Users/wilfr/Documents/Proy2-Simu-Prueba/Proy2-Simu/cmake-build-debug/
 # =============================================================================
 # Object build statements for EXECUTABLE target Proy2_Simu
 
@@ -49,7 +49,7 @@ cmake_ninja_workdir = C$:/Users/wilfr/Documents/Proy2-Simu/cmake-build-debug/
 
 build cmake_object_order_depends_target_Proy2_Simu: phony || CMakeFiles/Proy2_Simu.dir
 
-build CMakeFiles/Proy2_Simu.dir/main.cpp.obj: CXX_COMPILER__Proy2_Simu_Debug C$:/Users/wilfr/Documents/Proy2-Simu/main.cpp || cmake_object_order_depends_target_Proy2_Simu
+build CMakeFiles/Proy2_Simu.dir/main.cpp.obj: CXX_COMPILER__Proy2_Simu_Debug C$:/Users/wilfr/Documents/Proy2-Simu-Prueba/Proy2-Simu/main.cpp || cmake_object_order_depends_target_Proy2_Simu
   DEP_FILE = CMakeFiles\Proy2_Simu.dir\main.cpp.obj.d
   FLAGS = -g -std=gnu++14
   OBJECT_DIR = CMakeFiles\Proy2_Simu.dir
@@ -78,7 +78,7 @@ build Proy2_Simu.exe: CXX_EXECUTABLE_LINKER__Proy2_Simu_Debug CMakeFiles/Proy2_S
 # Utility command for edit_cache
 
 build CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D C:\Users\wilfr\Documents\Proy2-Simu\cmake-build-debug && "C:\Program Files\JetBrains\CLion 2021.3.4\bin\cmake\win\bin\cmake.exe" -E echo "No interactive CMake dialog available.""
+  COMMAND = cmd.exe /C "cd /D C:\Users\wilfr\Documents\Proy2-Simu-Prueba\Proy2-Simu\cmake-build-debug && "C:\Program Files\JetBrains\CLion 2021.3.4\bin\cmake\win\bin\cmake.exe" -E echo "No interactive CMake dialog available.""
   DESC = No interactive CMake dialog available...
   restat = 1
 
@@ -89,7 +89,7 @@ build edit_cache: phony CMakeFiles/edit_cache.util
 # Utility command for rebuild_cache
 
 build CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cmd.exe /C "cd /D C:\Users\wilfr\Documents\Proy2-Simu\cmake-build-debug && "C:\Program Files\JetBrains\CLion 2021.3.4\bin\cmake\win\bin\cmake.exe" --regenerate-during-build -SC:\Users\wilfr\Documents\Proy2-Simu -BC:\Users\wilfr\Documents\Proy2-Simu\cmake-build-debug"
+  COMMAND = cmd.exe /C "cd /D C:\Users\wilfr\Documents\Proy2-Simu-Prueba\Proy2-Simu\cmake-build-debug && "C:\Program Files\JetBrains\CLion 2021.3.4\bin\cmake\win\bin\cmake.exe" --regenerate-during-build -SC:\Users\wilfr\Documents\Proy2-Simu-Prueba\Proy2-Simu -BC:\Users\wilfr\Documents\Proy2-Simu-Prueba\Proy2-Simu\cmake-build-debug"
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -107,7 +107,7 @@ build Proy2_Simu: phony Proy2_Simu.exe
 # =============================================================================
 
 #############################################
-# Folder: C:/Users/wilfr/Documents/Proy2-Simu/cmake-build-debug
+# Folder: C:/Users/wilfr/Documents/Proy2-Simu-Prueba/Proy2-Simu/cmake-build-debug
 
 build all: phony Proy2_Simu.exe
 

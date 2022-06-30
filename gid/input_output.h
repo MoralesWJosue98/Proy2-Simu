@@ -153,8 +153,8 @@ void write_output_file(DS<DS<float> *> *R, char *filename) {
             SDDS<DS<float> *>::extract(R, i, &temp);
 
             //Se colocan los encabezados para el resultado actual
-            postResFile << R"(Result "Self-Esteem" "Load Case 1" )" << i + 1 << " Scalar OnNodes\n";
-            postResFile << "ComponentNames \"T\"\n";
+            postResFile << "Result \"Self Steem\" \"Load Case 1\" " << i + 1 << " Scalar OnNodes\n";
+            postResFile << "ComponentNames \"A\"\n";
             postResFile << "Values\n";
 
             //Se extraen las dimensiones de la matriz actual de resultados
@@ -168,7 +168,7 @@ void write_output_file(DS<DS<float> *> *R, char *filename) {
                 float value;
                 SDDS<float>::extract(temp, f, 0, &value);   //Todo se encuentra en la primera, y única, columna
 
-                //Se coloca el resultado actual precedido de un correlativo
+                //Se coloca el resultado actual precedido de un correlat    ivo
                 postResFile << f + 1 << "     " << value << "\n";
             }
 

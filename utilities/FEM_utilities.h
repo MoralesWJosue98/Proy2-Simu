@@ -150,7 +150,7 @@ public:
     */
     static void built_A_Neumann(DS<float> *A_N, float An, DS<int> *indices) {
         //Se extraen las dimensiones de <A_N>
-        int nrows, ncols, T_pos = 0;
+        int nrows, ncols, A_pos = 0;
         SDDS<float>::extension(A_N, &nrows, &ncols);
 
         //Se recorre la matriz <A_N>
@@ -358,23 +358,23 @@ public:
         //Se define la matriz c con dimensiones 3 x 1
         //Esto corresponde a las dimensiones resultantes para la aplicación del MEF
         //a un problema 2D
-        DS<float> *b;
-        SDDS<float>::create(&b, 3, 1, MATRIX);
+        DS<float> *c;
+        SDDS<float>::create(&c, 3, 1, MATRIX);
 
         //Se extraen los respectivos puntos que definen los nodos del objeto <e> y se envían para el cálculo de J
         float J = calculate_local_J(e->get_Node(0)->get_Point(), e->get_Node(1)->get_Point(),
                                     e->get_Node(2)->get_Point());
 
         //Se definen los elementos de la matriz de acuerdo a la fórmula posición por posición
-        SDDS<float>::insert(b, 0, 0, 1);
-        SDDS<float>::insert(b, 1, 0, 1);
-        SDDS<float>::insert(b, 2, 0, 4);
+        SDDS<float>::insert(c, 0, 0, 1);
+        SDDS<float>::insert(c, 1, 0, 1);
+        SDDS<float>::insert(c, 2, 0, 4);
 
-        //Se multiplica el contenido de la matriz b por el factor J/120
-        Math::product_in_place(b, J / 120);
+        //Se multiplica el contenido de la matriz c por el factor J/120
+        Math::product_in_place(c, J / 120);
 
         //Se retorna la matriz construida
-        return b;
+        return c;
     }
 
     /*
@@ -405,7 +405,7 @@ public:
     */
     static DS<float> *calculate_local_PA(float A, Element *e) {
         //Se preparan las variables para el proceso
-        DS<float> *B, *a;
+        DS<float> *B, *a_sub_2;
 
         //Se extraen los puntos que definen los nodos del elemento
         Point *P1 = e->get_Node(0)->get_Point();
@@ -415,27 +415,26 @@ public:
         //Se calcula el valor D para el elemento enviando los 3 puntos de sus vértices
         float D = calculate_local_D(P1, P2, P3);
 
-        //Se definen la matrix A_sub_2 con dimensiones 2 x 2
-        //Esto corresponde a las dimensiones resultantes para la aplicación del MEF
-        //a un problema 2D
-        SDDS<float>::create(&a, 2, 2, MATRIX);
+        //Se definen la matrix A_sub_2 con dimensiones 1 x 2
+        //Esto corresponde a_sub_2 las dimensiones resultantes para la aplicación del MEF
+        //a_sub_2 un problema 2D
+        SDDS<float>::create(&a_sub_2, 1, 2, MATRIX);
         //Se calcula la matriz A para el elemento enviando los 3 puntos de sus vértices
-        calculate_local_A_sub_2(a, P1, P2, P3);
+        calculate_local_A_sub_2(a_sub_2, P1, P2, P3);
 
         //Se definen la matrix B con dimensiones 2 x 3
-        //Esto corresponde a las dimensiones resultantes para la aplicación del MEF
-        //a un problema 2D
+        //Esto corresponde a_sub_2 las dimensiones resultantes para la aplicación del MEF
+        //a_sub_2 un problema 2D
         SDDS<float>::create(&B, 2, 3, MATRIX);
-        SDDS<float>::create(&B, 3, 2, MATRIX);
         //Se calcula la matriz B
         calculate_B(B);
 
         //Se efectúa A_sub_2 * B
-        DS<float> *temp = Math::product(a, B);
+        DS<float> *temp = Math::product(a_sub_2, B);
 
         //Se define la matriz PA con dimensiones 3 x 1
-        //Esto corresponde a las dimensiones resultantes para la aplicación del MEF
-        //a un problema 2D
+        //Esto corresponde a_sub_2 las dimensiones resultantes para la aplicación del MEF
+        //a_sub_2 un problema 2D
         DS<float> *pa;
         SDDS<float>::create(&pa, 3, 1, MATRIX);
 
@@ -443,7 +442,7 @@ public:
         float J = calculate_local_J(e->get_Node(0)->get_Point(), e->get_Node(1)->get_Point(),
                                     e->get_Node(2)->get_Point());
 
-        //Se definen los elementos de la matriz de acuerdo a la fórmula posición por posición
+        //Se definen los elementos de la matriz de acuerdo a_sub_2 la fórmula posición por posición
         SDDS<float>::insert(pa, 0, 0, 1);
         SDDS<float>::insert(pa, 1, 0, 4);
         SDDS<float>::insert(pa, 2, 0, 1);
@@ -451,15 +450,15 @@ public:
         //Se multiplica el contenido de la matriz pa por el factor J/120*D
         Math::product_in_place(pa, J / 120 * D);
         //Se multiplica la matriz pa por la matriz resultante de (A_sub_2 * B)
-        Math::product(pa, temp);
+        DS<float> *temp2 = Math::product(pa, temp);
         //Se multiplica el contenido de la matriz pa por el factor A
-        Math::product_in_place(pa, A);
+        Math::product_in_place(temp2, A);
 
-        SDDS<float>::destroy(a);
+        SDDS<float>::destroy(a_sub_2);
         SDDS<float>::destroy(B);
         SDDS<float>::destroy(temp);
 
-        return pa;
+        return temp2;
     }
 
     /*
@@ -670,18 +669,18 @@ public:
     apply_Dirichlet(int nnodes, int free_nodes, DS<float> **b, DS<float> *K, float Ad, DS<int> *dirichlet_indices) {
         //Se preparan las matrices a construir como parte del proceso
         //<new_b> será la matriz b después de remover las filas de los nodos con condición
-        //de Dirichlet, mientras que <T_D> será el vector columna adicional
-        DS<float> *new_b, *T_D;
-        //Se definen <new_b> y <T_D> como vectores columna con una cantidad de filas igual
+        //de Dirichlet, mientras que <A_D> será el vector columna adicional
+        DS<float> *new_b, *A_D;
+        //Se definen <new_b> y <A_D> como vectores columna con una cantidad de filas igual
         //a la cantidad de nodos que no tienen una condición de Dirichlet
         SDDS<float>::create(&new_b, free_nodes, 1, MATRIX);
-        SDDS<float>::create(&T_D, free_nodes, 1, MATRIX);
+        SDDS<float>::create(&A_D, free_nodes, 1, MATRIX);
 
         //Se preparan las variables auxiliares del proceso
         bool bres;
         float temp, acum;
         //<row_index> se utilizará para llevar un control de las posiciones definidas
-        //tanto en <new_b> como en <T_D>, inicia en 0 ya que en ambos casos primero se
+        //tanto en <new_b> como en <A_D>, inicia en 0 ya que en ambos casos primero se
         //definirán sus posiciones (0,0).
         float row_index = 0;
 
@@ -697,7 +696,7 @@ public:
                               &bres); //Se envía i+1 para compensar la diferencia en los conteos
 
             //Si el nodo actual no posee condición de Dirichlet, se procede
-            //a definir las posiciones respectivas en <new_b> y <T_D>, de lo
+            //a definir las posiciones respectivas en <new_b> y <A_D>, de lo
             //contrario se ignora
             if (!bres) {
                 //Se extrae el valor en la posición actual de la matriz b
@@ -722,7 +721,7 @@ public:
 
                     //Si la columna actual posee condición de Dirichlet, se procede
                     //a calcular la posición respectiva en el vector columna adicional
-                    //<T_D>, de lo contrario se ignora
+                    //<A_D>, de lo contrario se ignora
                     if (bres) {
                         //Se extrae el valor de la celda actual en K
                         SDDS<float>::extract(K, i, j, &temp);
@@ -734,18 +733,18 @@ public:
                 //Se inserta el resultado del acumulador en el vector columna adicional en la
                 //posición actual de su recorrido, indicada por <row_index>
                 //El resultado se inserta multiplicado por -1 para simular la resta que debe ejecutarse
-                SDDS<float>::insert(T_D, row_index, 0, -acum);
+                SDDS<float>::insert(A_D, row_index, 0, -acum);
 
                 //Actualizamos <row_index> para avanzar en su recorrido
                 row_index++;
             }
         }
 
-        //Se suma el vector columna adicional <T_D> a la nueva matriz b
-        Math::sum_in_place(new_b, T_D);
+        //Se suma el vector columna adicional <A_D> a la nueva matriz b
+        Math::sum_in_place(new_b, A_D);
 
-        //<T_D> ya no será utilizado, por lo que se libera su espacio en memoria
-        SDDS<float>::destroy(T_D);
+        //<A_D> ya no será utilizado, por lo que se libera su espacio en memoria
+        SDDS<float>::destroy(A_D);
         //Dado que la actual matriz b será sustituida por la nueva, liberamos también
         //su espacio en memoria
         //Se utiliza *b, ya que la matriz b fue enviada por referencia
